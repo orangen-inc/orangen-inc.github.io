@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>JSON Converter with Lowercase Users</title>
+</head>
+<body>
+    <h1>JSON Converter</h1>
+    <textarea id="inputJSON" rows="20" cols="60" placeholder="Paste your JSON here"></textarea><br><br>
+    <label for="direction">Conversion Direction:</label>
+    <select id="direction">
+        <option value="userToGroup">User to Group</option>
+        <option value="groupToUser">Group to User</option>
+    </select>
+    <button onclick="convert()">Convert</button><br><br>
+    <textarea id="outputJSON" rows="20" cols="60" placeholder="Converted JSON will appear here"></textarea>
+    <script>
+        function userToGroup(inputData) {
+            let outputData = {};
+            for (let user in inputData) {
+                let lowerUser = user.toLowerCase();
+                let envs = inputData[user];
+                for (let env in envs) {
+                    let platforms = envs[env];
+                    if (!outputData[env]) {
+                        outputData[env] = {};
+                    }
+                    for (let platform in platforms) {
+                        let groups = platforms[platform];
+                        for (let group of groups) {
+                            let platformGroup = `${platform}/${group}`;
+                            if (!outputData[env][platformGroup]) {
+                                outputData[env][platformGroup] = [];
+                            }
+                            if (!outputData[env][platformGroup].includes(lowerUser)) {
+                                outputData[env][platformGroup].push(lowerUser);
+                            }
+                        }
+                    }
+                }
+            }
+            return outputData;
+        }
+
+        function groupToUser(inputData) {
+            let outputData = {};
+            for (let env in inputData) {
+                let platformGroups = inputData[env];
+                for (let platformGroup in platformGroups) {
+                    let [platform, group] = platformGroup.split('/');
+                    let users = platformGroups[platformGroup];
+                    for (let user of users) {
+                        let lowerUser = user.toLowerCase();
+                        if (!outputData[lowerUser]) {
+                            outputData[lowerUser] = {};
+                        }
+                        if (!outputData[lowerUser][env]) {
+                            outputData[lowerUser][env] = {};
+                        }
+                        if (!outputData[lowerUser][env][platform]) {
+                            outputData[lowerUser][env][platform] = [];
+                        }
+                        if (!outputData[lowerUser][env][platform].includes(group)) {
+                            outputData[lowerUser][env][platform].push(group);
+                        }
+                    }
+                }
+            }
+            return outputData;
+        }
+
+        function convert() {
+            let inputText = document.getElementById('inputJSON').value;
+            let direction = document.getElementById('direction').value;
+            let outputText = '';
+
+            try {
+                let inputData = JSON.parse(inputText);
+
+                let outputData;
+                if (direction === 'userToGroup') {
+                    outputData = userToGroup(inputData);
+                } else if (direction === 'groupToUser') {
+                    outputData = groupToUser(inputData);
+                } else {
+                    alert('Invalid conversion direction');
+                    return;
+                }
+
+                outputText = JSON.stringify(outputData, null, 2);
+            } catch (e) {
+                alert('Error parsing JSON input: ' + e.message);
+                return;
+            }
+
+            document.getElementById('outputJSON').value = outputText;
+        }
+    </script>
+</body>
+</html>
